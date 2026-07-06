@@ -58,7 +58,7 @@ def pre_gate(filepath):
         json.dump({'file': filepath, 'time': datetime.now().isoformat(), 'action': 'pre'}, f)
 
     # 1. H3 Self-Audit Q1-Q5
-    rc, _, _ = run(f'"{PYTHON}" "{AUDIT}"')
+    rc, _, _ = run(f'"{PYTHON}" "{AUDIT}" "{WD}"')
     results['audit'] = 'PASS' if rc == 0 else f'FAIL (rc={rc})'
 
     # 1. CLARIFY gate

@@ -35,8 +35,8 @@
   <Actions Context="Author">
     <Exec>
       <Command>C:\Users\15002\AppData\Local\Programs\Python\Python313\pythonw.exe</Command>
-      <Arguments>E:\AgentHub\AgentBoosting\GodCreating\watchdog\daemon_tick.py</Arguments>
-      <WorkingDirectory>E:\AgentHub\AgentBoosting\GodCreating\watchdog</WorkingDirectory>
+      <Arguments>E:\AgentHub\AgentBoosting\core\watchdog\daemon_tick.py</Arguments>
+      <WorkingDirectory>E:\AgentHub\AgentBoosting\core\watchdog</WorkingDirectory>
     </Exec>
   </Actions>
 </Task>

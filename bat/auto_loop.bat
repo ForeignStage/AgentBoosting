@@ -7,7 +7,7 @@ set ROOT=%~2
 if "%AGENT%"=="" set AGENT=codex
 if "%ROOT%"=="" set ROOT=%CD%
 :loop
-python "E:\AgentHub\AgentBoosting\GodCreating\watchdog\auto_executor.py" --agent %AGENT% --mode auto "%ROOT%"
+"PYTHON313/python.exe" "E:\AgentHub\ModelBoosting\core\watchdog\auto_executor.py" --agent %AGENT% --mode daemon "%ROOT%"
 if %ERRORLEVEL%==3 (echo [LOOP] FUSE BLOWN. & goto :end)
 if %ERRORLEVEL%==1 (timeout /t 30 >nul)
 timeout /t 5 >nul

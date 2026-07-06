@@ -16,7 +16,7 @@ For each iteration:
 2. CHECK docs/EMERGENCY_STOP — if exists: generate final HANDOFF, output "CLAUDE CODE STOPPED", STOP
 3. Check QUEUED — Claude Code for tasks
 4. If task exists AND no file lock conflict:
-   0. READ E:\AgentHub\AgentBoosting\GodCreating\AGENTS_CHEATSHEET.md (every task, no exception)
+   0. READ E:\AgentHub\ModelBoosting\core\AGENTS_CHEATSHEET.md (every task, no exception)
    0a. RUN `python watchdog/enforce.py fail --read` → note recent failure patterns
    0b. RUN `python watchdog/enforce.py task-reset` (reset per-task spiral counter)
    0c. RUN `python watchdog/enforce.py route --task "[task description]"`:
@@ -28,7 +28,7 @@ For each iteration:
       - no_go AND boot expired → RUN `python watchdog/enforce.py boot --renew` → re-check; still no_go → write HANDOFF, STOP
       - no_go other reason → wait 2 min, retry once; still no_go → write HANDOFF, STOP
    a1. CHECK task step count: if >5 steps → split sub-tasks, mark [BLOCKED-SPLIT], restart loop
-   b. READ matching skill files from E:\AgentHub\AgentBoosting\GodCreating\skills\
+   b. READ matching skill files from E:\AgentHub\ModelBoosting\core\skills\
    b1. COUNT [REANCHOR] in COMPLETED — if total mod 3 == 0 and total > 0: re-read AGENTS.md PART 1
    c. WRITE docs/SCOPE_active.md: Task / Will write / Done when
    d. Claim task (add [IN PROGRESS — Claude Code])

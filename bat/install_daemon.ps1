@@ -1,9 +1,9 @@
 $taskName = "AgentHub_Constitution_Daemon"
 $python = "C:\Users\15002\AppData\Local\Programs\Python\Python313\pythonw.exe"
-$script = "E:\AgentHub\AgentBoosting\GodCreating\watchdog\daemon_tick.py"
+$script = "E:\AgentHub\ModelBoosting\core\watchdog\daemon_tick.py"
 
 $action = New-ScheduledTaskAction -Execute $python -Argument $script
-$action.WorkingDirectory = "E:\AgentHub\AgentBoosting\GodCreating\watchdog"
+$action.WorkingDirectory = "E:\AgentHub\ModelBoosting\core\watchdog"
 
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(-1) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration ([TimeSpan]::MaxValue)
 

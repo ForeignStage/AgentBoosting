@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Set mode globally and propagate to all watched project watchdogs.
-Usage: python set_mode.py interactive|auto
+Usage: python set_mode.py dispatch|daemon
 """
 import sys, os, json
 
@@ -14,8 +14,8 @@ def set_mode(wd, mode):
     except Exception: return False
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ('interactive', 'auto'):
-        print('Usage: set_mode.py interactive|auto'); sys.exit(1)
+    if len(sys.argv) < 2 or sys.argv[1] not in ('dispatch', 'daemon'):
+        print('Usage: set_mode.py dispatch|daemon'); sys.exit(1)
     mode = sys.argv[1]
     ok = [GLOBAL_WD] if set_mode(GLOBAL_WD, mode) else []
     try:

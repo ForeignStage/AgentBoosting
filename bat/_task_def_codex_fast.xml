@@ -35,8 +35,8 @@
   <Actions Context="Author">
     <Exec>
       <Command>C:\Users\15002\AppData\Local\Programs\Python\Python313\pythonw.exe</Command>
-      <Arguments>E:\AgentHub\AgentBoosting\GodCreating\watchdog\codex_enforcer_daemon.py --fast "E:\AgentHub\AgentProjects"</Arguments>
-      <WorkingDirectory>E:\AgentHub\AgentBoosting\GodCreating\watchdog</WorkingDirectory>
+      <Arguments>E:\AgentHub\AgentBoosting\core\watchdog\codex_enforcer_daemon.py --fast "E:\AgentHub\AgentProjects"</Arguments>
+      <WorkingDirectory>E:\AgentHub\AgentBoosting\core\watchdog</WorkingDirectory>
     </Exec>
   </Actions>
 </Task>

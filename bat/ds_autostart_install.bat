@@ -3,7 +3,7 @@
 :: Run ONCE as Administrator to install; no admin needed afterwards.
 schtasks /create ^
   /tn "AgentHub_DSWatchdog" ^
-  /tr "pythonw \"E:\AgentHub\AgentBoosting\GodCreating\watchdog\fs_watcher.py\"" ^
+  /tr "\"PYTHON313/pythonw.exe\" \"E:\AgentHub\ModelBoosting\core\watchdog\fs_watcher.py\"" ^
   /sc ONLOGON ^
   /ru "%USERNAME%" ^
   /f
@@ -13,4 +13,4 @@ if errorlevel 1 (
 )
 echo [OK] Task "AgentHub_DSWatchdog" registered. Active from next login.
 echo      To remove: schtasks /delete /tn "AgentHub_DSWatchdog" /f
-echo      Violations log: E:\AgentHub\AgentBoosting\GodCreating\logs\VIOLATION.log
+echo      Violations log: E:\AgentHub\ModelBoosting\core\logs\VIOLATION.log

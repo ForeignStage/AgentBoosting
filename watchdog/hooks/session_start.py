@@ -1,5 +1,5 @@
 """
-Claude Code SessionStart hook — v5.33 relaxed. Never blocks the session.
+Claude Code SessionStart hook — relaxed. Never blocks the session.
 All failures are advisory warnings only. Integrity auto-healed before check.
 """
 import subprocess
@@ -9,12 +9,12 @@ import json
 from datetime import datetime
 
 PYTHON = r"C:/Users/15002/AppData/Local/Programs/Python/Python313/python.exe"
-ENFORCE = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\enforce.py"
-MODEL_DETECT = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\model_detect.py"
-BOOT_BAT = r"E:\AgentHub\AgentBoosting\GodCreating\bat\ds_boot.bat"
-GATE = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\deepseek_gate.py"
+ENFORCE = r"E:\AgentHub\AgentBoosting\core\watchdog\enforce.py"
+MODEL_DETECT = r"E:\AgentHub\AgentBoosting\core\watchdog\model_detect.py"
+BOOT_BAT = r"E:\AgentHub\AgentBoosting\core\bat\ds_boot.bat"
+GATE = r"E:\AgentHub\AgentBoosting\core\watchdog\deepseek_gate.py"
 
-os.chdir(r"E:\AgentHub\AgentBoosting\GodCreating")
+os.chdir(r"E:\AgentHub\AgentBoosting\core")
 
 def run(cmd, label, silent=False):
     try:
@@ -40,7 +40,7 @@ def main():
         with open("watchdog/model_detect.log", "a", encoding="utf-8") as f:
             f.write(f"[{datetime.now().isoformat()}] {model_out}\n")
 
-    # v5.33: Auto-heal integrity hash before any checks (prevents false mismatch)
+    # Auto-heal integrity hash before any checks (prevents false mismatch)
     run(f'"{PYTHON}" "{ENFORCE}" integrity --update', "integrity-update", silent=True)
 
     # All checks run silently by default; only failures surface
@@ -68,7 +68,7 @@ def main():
 
     # Write CC session lock — proves CC is alive (for dead agent detection)
     try:
-        lock_dir = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\locks"
+        lock_dir = r"E:\AgentHub\AgentBoosting\core\watchdog\locks"
         os.makedirs(lock_dir, exist_ok=True)
         session_lock = os.path.join(lock_dir, "cc_session_active.lock")
         with open(session_lock, "w", encoding="utf-8") as f:
@@ -76,10 +76,10 @@ def main():
     except Exception:
         pass
 
-    # v5.33: Auto-start background daemons if not already running
+    # Auto-start background daemons if not already running
     daemons = {
-        "auto_loop": r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\auto_loop_global.py",
-        "task_poller": r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\task_poller.py",
+        "auto_loop": r"E:\AgentHub\AgentBoosting\core\watchdog\auto_loop_global.py",
+        "task_poller": r"E:\AgentHub\AgentBoosting\core\watchdog\task_poller.py",
     }
     for name, script in daemons.items():
         if os.path.exists(script):
@@ -96,7 +96,7 @@ def main():
                 pass
 
     # Run HANDOFF diff — cross-verify other agent's claims
-    diff_script = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\diff_since_handoff.py"
+    diff_script = r"E:\AgentHub\AgentBoosting\core\watchdog\diff_since_handoff.py"
     if os.path.exists(diff_script):
         docs_dir = r"docs"
         for agent in ["codex", "claude_code"]:
@@ -113,7 +113,7 @@ def main():
         print(f"[SessionStart] WARNING: {', '.join(warnings)} failed. Run CLAWD_VERBOSE=1 for details.")
 
     # Skill file inventory
-    skill_dir = r"E:\AgentHub\AgentBoosting\GodCreating\skills"
+    skill_dir = r"E:\AgentHub\AgentBoosting\core\skills"
     skill_files = ["SKILL_FASTAPI.md", "SKILL_SQLITE.md", "SKILL_FRONTEND.md", "SKILL_DEBUG.md", "SKILL_DEEPSEEK_DISCIPLINE.md"]
     missing = [s for s in skill_files if not os.path.exists(os.path.join(skill_dir, s))]
     if missing:
@@ -124,5 +124,5 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         print(f"[SessionStart] FATAL: {e}")
-    # v5.33: ALWAYS exit 0 — never let this hook block the session.
+    # ALWAYS exit 0 — never let this hook block the session.
     sys.exit(0)

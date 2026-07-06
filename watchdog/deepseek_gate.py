@@ -2,15 +2,15 @@
 """DeepSeek Discipline Gate -- Pre-execution clarify/scope enforcer.
 Usage: python deepseek_gate.py "<task>" [watchdog_dir]
 Returns: 0=GO, 1=STOP
-v5.33 -- interactive mode: unconditional pass. Auto mode: original strict behavior.
-v5.34 -- model-aware: frontier models (opus/gpt/sonnet/gemini) auto-pass.
-v5.35 -- uses canonical get_calibration() from model_detect (calibration.json cache).
+Dispatch mode: unconditional pass. Daemon mode: original strict behavior.
+Model-aware: frontier models (opus/gpt/sonnet/gemini) auto-pass.
+Uses canonical get_calibration() from model_detect (calibration.json cache).
 Only deepseek or unknown models face the gate in auto mode.
 """
 import sys, os
 from datetime import datetime
 
-# ── Canonical calibration resolver (v5.35) ──
+# ── Canonical calibration resolver ──
 def _is_frontier(watchdog_dir):
     """Use model_detect.get_calibration() -- cached calibration.json, no per-call sqlite hit."""
     try:
@@ -32,18 +32,18 @@ EXPLORE_KW = {
 }
 
 def read_mode(wd):
-    """Read current mode from watchdog/mode file. Defaults to interactive."""
+    """Read current mode from watchdog/mode file. Defaults to dispatch."""
     mode_file = os.path.join(wd, "mode")
     if not os.path.exists(mode_file):
-        return "interactive"
+        return "dispatch"
     try:
         with open(mode_file, 'r', encoding='utf-8') as f:
             mode = f.read().strip()
-        if mode in ('interactive', 'auto'):
+        if mode in ('dispatch', 'daemon'):
             return mode
-    except:
+    except Exception:
         pass
-    return "interactive"
+    return "dispatch"
 
 def detect_mode(text):
     t = text.lower()
@@ -84,17 +84,17 @@ def main():
     has_scope = scope_exists(wd)
     session_mode = read_mode(wd)
 
-    # v5.34: Frontier model bypass -- gate only exists to compensate DeepSeek weakness
+    # Frontier model bypass -- gate only exists to compensate DeepSeek weakness
     if _is_frontier(wd):
         print(f"[GATE] Frontier model detected -- gate bypassed. GO. (detected: {mode})")
         sys.exit(0)
 
-    # v5.33: Interactive mode = unconditional pass. Never block the user.
-    if session_mode == "interactive":
-        print(f"[GATE] Interactive mode -- GO (detected: {mode}, scope={'YES' if has_scope else 'NO'})")
+    # Dispatch mode = unconditional pass. Never block the user.
+    if session_mode == "dispatch":
+        print(f"[GATE] Dispatch mode -- GO (detected: {mode}, scope={'YES' if has_scope else 'NO'})")
         sys.exit(0)
 
-    # Auto mode: keep original strict behavior
+    # Daemon mode: keep original strict behavior
     if mode == "EXPLORE":
         print(f"[GATE] EXPLORE -- discuss only, no execution. GO.")
         sys.exit(0)

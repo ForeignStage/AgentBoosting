@@ -18,12 +18,35 @@ __pycache__/
 *.swp
 *.swo
 
-# Runtime state (locks, tokens, logs)
+# Runtime state (locks, tokens, logs, machine-specific config)
 watchdog/locks/
 watchdog/boot_token
 watchdog/integrity.sha
 watchdog/spiral_log.json
+watchdog/config.json
+watchdog/calibration.json
+watchdog/action_log.json
+watchdog/fuse_rmb.json
+watchdog/mode
 routing/route_log.json
+
+# Machine-specific (personal paths, scheduled tasks, hooks)
+config/session_routing.json
+config/state_5.sqlite.path
+config/last_mode.json
+watchdog/monitor_bg.ps1
+watchdog/silence_codex.ps1
+watchdog/proc_monitor.ps1
+watchdog/hooks/
+bat/_task_def.xml
+bat/_task_def_codex_fast.xml
+bat/install_daemon.ps1
+Codex_AGENTS_bak_20260629.md
+bootstrap_watchdog.py
+docs/VERIFY_*.md
+docs/CC_WAKEUP.md
+docs/CODEX_WAKEUP.md
+docs/CLARIFY_PENDING.md
 
 # OS
 .DS_Store

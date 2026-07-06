@@ -16,7 +16,7 @@ For each iteration:
 2. CHECK docs/EMERGENCY_STOP — if exists: generate final HANDOFF_CX_[timestamp].md, output "CODEX STOPPED", STOP
 3. CHECK QUEUED — Codex for tasks
 4. If task exists AND no file lock conflict:
-   0. READ E:\AgentHub\AgentBoosting\GodCreating\AGENTS_CHEATSHEET.md (every task, no exception)
+   0. READ E:\AgentHub\ModelBoosting\core\AGENTS_CHEATSHEET.md (every task, no exception)
    0a. RUN `python watchdog/enforce.py fail --read` → note recent failure patterns
    0b. RUN `python watchdog/enforce.py task-reset` (reset per-task spiral counter)
    0c. RUN `python watchdog/enforce.py route --task "[task description]"`:

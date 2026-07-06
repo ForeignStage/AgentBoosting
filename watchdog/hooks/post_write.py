@@ -1,23 +1,23 @@
 """Claude Code PostToolUse hook -- verify + quality + delegation + fuse after file writes.
-v5.35: +sync_to_agentprojects auto-routing for Codex/CC file output.
-v5.34: model-gated. Frontier models skip all checks, return immediately.
+sync_to_agentprojects auto-routing for Codex/CC file output.
+Model-gated. Frontier models skip all checks, return immediately.
 DeepSeek keeps full pipeline (verify, hallucination, quality, delegation, fuse).
 """
 import subprocess, sys, os, json, shutil
 from datetime import datetime
 
 PYTHON = r"C:/Users/15002/AppData/Local/Programs/Python/Python313/python.exe"
-ENFORCE = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\enforce.py"
-VERIFY = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\verify_task.py"
-QUALITY = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\code_quality_gate.py"
-DELEGATION = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\delegation_check.py"
-HALLUCINATION = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\hallucination_check.py"
-HALCHECK_LIVE = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\halcheck_live.py"
-SELF_REVIEW = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\self_review_injector.py"
-MODEL_DETECT = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\model_detect.py"
+ENFORCE = r"E:\AgentHub\AgentBoosting\core\watchdog\enforce.py"
+VERIFY = r"E:\AgentHub\AgentBoosting\core\watchdog\verify_task.py"
+QUALITY = r"E:\AgentHub\AgentBoosting\core\watchdog\code_quality_gate.py"
+DELEGATION = r"E:\AgentHub\AgentBoosting\core\watchdog\delegation_check.py"
+HALLUCINATION = r"E:\AgentHub\AgentBoosting\core\watchdog\hallucination_check.py"
+HALCHECK_LIVE = r"E:\AgentHub\AgentBoosting\core\watchdog\halcheck_live.py"
+SELF_REVIEW = r"E:\AgentHub\AgentBoosting\core\watchdog\self_review_injector.py"
+MODEL_DETECT = r"E:\AgentHub\AgentBoosting\core\watchdog\model_detect.py"
 
 AGENT_PROJECTS_ROOT = r"E:\AgentHub\AgentProjects"
-ROUTING_CONFIG = r"E:\AgentHub\AgentBoosting\GodCreating\config\session_routing.json"
+ROUTING_CONFIG = r"E:\AgentHub\AgentBoosting\core\config\session_routing.json"
 CODEX_BASE = r"C:\Users\15002\Documents\Codex"
 DOCS_BASE = r"C:\Users\15002\Documents"
 
@@ -32,7 +32,7 @@ def is_frontier():
     try:
         sys.path.insert(0, os.path.dirname(MODEL_DETECT))
         from model_detect import detect
-        _, _, _, calibration = detect(r"E:\AgentHub\AgentBoosting\GodCreating")
+        _, _, _, calibration = detect(r"E:\AgentHub\AgentBoosting\core")
         return calibration == "standard"
     except Exception:
         return False
@@ -164,10 +164,10 @@ def main():
     if not filepath:
         sys.exit(0)
 
-    # v5.35: Always run sync_to_agentprojects (all models, all file types)
+    # Always run sync_to_agentprojects (all models, all file types)
     sync_to_agentprojects(filepath)
 
-    # v5.34: Frontier bypass -- all post-write checks are DeepSeek compensation.
+    # Frontier bypass -- all post-write checks are DeepSeek compensation.
     # Frontier models handle correctness/review natively.
     if is_frontier():
         sys.exit(0)

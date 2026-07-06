@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fix UTF-8 double-encoding mojibake in AgentBoosting files.
+Fix UTF-8 double-encoding mojibake in ModelBoosting files.
 
 Two corruption patterns (caused by PowerShell/Bash encoding mismatch):
 1. Special chars (— → ├ └ │): UTF-8 multi-byte → partially decoded as GBK
@@ -12,7 +12,7 @@ Two corruption patterns (caused by PowerShell/Bash encoding mismatch):
 Usage:
   python fix_mojibake.py --dry-run [files...]   Preview
   python fix_mojibake.py [files...]             Apply (.mojibak backup)
-  python fix_mojibake.py --all                  Fix all active files in AgentBoosting
+  python fix_mojibake.py --all                  Fix all active files in ModelBoosting
 """
 import sys, os, shutil
 from pathlib import Path
@@ -173,8 +173,8 @@ def find_corrupt_files():
     patterns = ['鈥', '鈫', '鈹', '锟']
     files = set()
 
-    for root_dir in [r'E:\AgentHub\AgentBoosting\宪法',
-                     r'E:\AgentHub\AgentBoosting\GodCreating']:
+    for root_dir in [r'E:\AgentHub\ModelBoosting\宪法',
+                     r'E:\AgentHub\ModelBoosting\core']:
         for dirpath, dirnames, filenames in os.walk(root_dir):
             # Skip backup dirs
             if 'backups' in dirpath.lower() or '__pycache__' in dirpath:
@@ -205,7 +205,7 @@ def main():
     if not files:
         print("Usage: python fix_mojibake.py [--dry-run] [--all] [files...]")
         print("  --dry-run   Preview only, no changes")
-        print("  --all       Fix all active files with mojibake in AgentBoosting")
+        print("  --all       Fix all active files with mojibake in ModelBoosting")
         sys.exit(1)
 
     action = "DRY RUN — " if dry_run else ""

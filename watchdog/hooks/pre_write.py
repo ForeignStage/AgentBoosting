@@ -1,13 +1,13 @@
 """Claude Code PreToolUse hook -- audit + gate + backup + spiral before file writes.
-v5.34: model-gated. Frontier models skip audit/gate, keep only backup+spiral.
+Model-gated. Frontier models skip audit/gate, keep only backup+spiral.
 """
 import subprocess, sys, os, json
 
 PYTHON = r"C:/Users/15002/AppData/Local/Programs/Python/Python313/python.exe"
-ENFORCE = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\enforce.py"
-GATE = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\deepseek_gate.py"
-AUDIT = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\self_audit.py"
-MODEL_DETECT = r"E:\AgentHub\AgentBoosting\GodCreating\watchdog\model_detect.py"
+ENFORCE = r"E:\AgentHub\AgentBoosting\core\watchdog\enforce.py"
+GATE = r"E:\AgentHub\AgentBoosting\core\watchdog\deepseek_gate.py"
+AUDIT = r"E:\AgentHub\AgentBoosting\core\watchdog\self_audit.py"
+MODEL_DETECT = r"E:\AgentHub\AgentBoosting\core\watchdog\model_detect.py"
 
 def run(cmd, timeout=15):
     try:
@@ -22,7 +22,7 @@ def is_frontier():
         # Use inline import to avoid slow subprocess
         sys.path.insert(0, os.path.dirname(MODEL_DETECT))
         from model_detect import detect
-        _, _, _, calibration = detect(r"E:\AgentHub\AgentBoosting\GodCreating")
+        _, _, _, calibration = detect(r"E:\AgentHub\AgentBoosting\core")
         return calibration == "standard"
     except Exception:
         return False
@@ -44,7 +44,7 @@ def main():
     if not filepath:
         sys.exit(0)
 
-    # v5.34: Frontier bypass -- gate & audit only needed for DeepSeek
+    # Frontier bypass -- gate & audit only needed for DeepSeek
     if is_frontier():
         # Core safety only: backup + spiral (always enforced, all models)
         run(f'"{PYTHON}" "{ENFORCE}" backup --target "{filepath}"')

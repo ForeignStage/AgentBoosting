@@ -10,7 +10,7 @@ set TASK=%~1
 set WD=%~2
 if "%WD%"=="" set WD=%CD%\watchdog
 
-python "E:\AgentHub\AgentBoosting\GodCreating\watchdog\deepseek_gate.py" "%TASK%" "%WD%"
+"PYTHON313/python.exe" "E:\AgentHub\ModelBoosting\core\watchdog\deepseek_gate.py" "%TASK%" "%WD%"
 if errorlevel 1 (
     echo [GATE STOP] Read docs\CLARIFY_PENDING.md, clarify intent, then re-run.
     exit /b 1

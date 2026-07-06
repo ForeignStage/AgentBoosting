@@ -1,2 +1,2 @@
 @echo off
-python "E:\AgentHub\AgentBoosting\GodCreating\watchdog\set_mode.py" auto
+"PYTHON313/python.exe" "E:\AgentHub\ModelBoosting\core\watchdog\set_mode.py" daemon

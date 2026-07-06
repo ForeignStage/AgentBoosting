@@ -26,15 +26,15 @@ def fuse_ok(root):
             [PYTHONW_EXE, os.path.join(_wd,'enforce.py'),'fuse','--check'],
             creationflags=0x08000000, capture_output=True, text=True, cwd=root, timeout=10)
         return 'blown' not in r.stdout.lower()
-    except: return True
+    except Exception: return True
 
 def current_mode(root):
     try:
         r = subprocess.run(
             [PYTHONW_EXE, os.path.join(_wd,'enforce.py'),'mode','--check'],
             creationflags=0x08000000, capture_output=True, text=True, cwd=root, timeout=10)
-        return 'auto' if 'auto' in r.stdout.lower() else 'interactive'
-    except: return 'interactive'
+        return 'daemon' if 'daemon' in r.stdout.lower() else 'dispatch'
+    except Exception: return 'dispatch'
 
 def next_task(queue, agent):
     with open(queue, encoding='utf-8') as f: lines = f.readlines()
@@ -84,7 +84,7 @@ def parse_and_apply(output, root):
 
 def build_prompt(task, agent, root):
     skill = open(_sk, encoding='utf-8').read() if os.path.exists(_sk) else ''
-    _pre('req_expand.py',       [task, '--agent', agent, '--mode', 'auto', root], root)
+    _pre('req_expand.py',       [task, '--agent', agent, '--mode', 'daemon', root], root)
     _pre('context_injector.py', [task, root], root)
     reqs = _doc(root, 'REQUIREMENTS_EXPANDED.md')
     ctx  = _doc(root, 'CONTEXT_INJECTION.md')
@@ -127,7 +127,7 @@ def pre_gate(root, agent):
         subprocess.run([
             PYTHONW_EXE, enforce, 'locks', '--expire'],
                        creationflags=0x08000000, capture_output=True, cwd=root, timeout=10)
-    except:
+    except Exception:
         pass
 
     # 3. Integrity check + auto-restore
@@ -147,17 +147,17 @@ def pre_gate(root, agent):
                     dst = os.path.join(root, 'AGENTS.md')
                     shutil.copy2(src, dst)
                     print(f'[EXECUTOR] Restored AGENTS.md from {backups[0]}', flush=True)
-    except:
+    except Exception:
         pass
 
-    # 4. Fuse check (HARD STOP ONLY HERE)
+    # 4. Fuse check (half-blow: advisory only, never hard-stops)
     try:
         r = subprocess.run([
             PYTHONW_EXE, enforce, 'fuse', '--check'],
                            creationflags=0x08000000, capture_output=True, text=True, cwd=root, timeout=10)
-        if 'blown' in r.stdout.lower():
-            return False, 'FUSE BLOWN'
-    except:
+        if 'half_blown' in r.stdout.lower():
+            print(f'[EXECUTOR] FUSE HALF-BLOWN -- advisory. Continuing by user authority.', flush=True)
+    except Exception:
         pass
 
     # 5. Spiral check for files in scope
@@ -178,7 +178,7 @@ def pre_gate(root, agent):
                         if 'blocked' in r.stdout.lower():
                             print(f'[EXECUTOR] SPIRAL BLOCKED: {fpath}, re-queuing task', flush=True)
                             return False, f'SPIRAL BLOCKED: {fpath}'
-    except:
+    except Exception:
         pass
 
     return True, 'GO'
@@ -222,7 +222,7 @@ def post_gate(root, agent):
                 files = [f.strip() for f in will_write_match.group(1).split(',') if f.strip()]
                 changed_files = [f if os.path.isabs(f) else os.path.join(root, f)
                                for f in files if os.path.exists(f if os.path.isabs(f) else os.path.join(root, f))]
-        except:
+        except Exception:
             pass
 
     py_files = [f for f in changed_files if f.endswith('.py')]
@@ -244,7 +244,7 @@ def post_gate(root, agent):
                           creationflags=0x08000000, capture_output=True, text=True, cwd=root, timeout=10)
         if 'fail' in r.stdout.lower() or 'stale' in r.stdout.lower():
             return False, f'VERIFY --check failed'
-    except:
+    except Exception:
         pass
 
     return True, 'ALL PASSED'
@@ -276,7 +276,7 @@ def main():
     agent, mode, root = 'codex', None, os.getcwd()
     for a in sys.argv[1:]:
         if a in ('codex','claude_code'):  agent = a
-        elif a in ('auto','interactive'): mode  = a
+        elif a in ('daemon','dispatch'): mode  = a
         elif os.path.isdir(a):           root  = a
     if mode is None: mode = current_mode(root)
 
@@ -294,7 +294,7 @@ def main():
     prompt = build_prompt(task, agent, root)
     pfile  = write_prompt(root, agent, prompt)
 
-    if mode == 'interactive':
+    if mode == 'dispatch':
         print(f'[EXECUTOR] Prompt: {pfile}')
         print(f'[EXECUTOR] Paste into {agent} session to execute.')
         sys.exit(2)

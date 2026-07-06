@@ -19,7 +19,7 @@ def score_file(path, kws):
     try:
         text = open(path, encoding='utf-8', errors='ignore').read().lower()
         return sum(text.count(k) for k in kws)
-    except: return 0
+    except Exception: return 0
 
 def extract_functions(path, kws, max_lines):
     """Extract most relevant functions/classes from a Python file."""

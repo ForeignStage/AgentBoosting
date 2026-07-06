@@ -20,7 +20,7 @@ SECTION = {'claude_code': 'QUEUED -- Claude Code', 'codex': 'QUEUED -- Codex'}
 
 def load_dirs():
     try:    return json.load(open(CFG, encoding="utf-8"))["watch"]
-    except: return [r"E:\AgentHub"]
+    except Exception: return [r"E:\AgentHub"]
 
 def scope_exists(path):
     d = os.path.dirname(path)
@@ -59,7 +59,7 @@ def snapshot(dirs):
 def parse_pending(queue_path):
     """Return {agent: [task, ...]} for unclaimed tasks."""
     try: text = open(queue_path, encoding="utf-8").read()
-    except: return {}
+    except Exception: return {}
     pending = {a: [] for a in WAKEUP}
     cur = None
     for line in text.splitlines():

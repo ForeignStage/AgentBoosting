@@ -4,6 +4,7 @@ Usage: python code_quality_gate.py [file1.py file2.py ...] [--scope project_root
 Exit 0 = pass. Exit 1 = issues found (see output).
 """
 import sys, os, subprocess
+from paths import PYTHONW_EXE
 
 IGNORE = 'E501,W503,W504'  # line length and line-break conventions --subjective
 

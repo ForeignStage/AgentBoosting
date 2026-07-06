@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-DeepSeek Compensation Engine v2.1 (v5.34)
-==========================================
+DeepSeek Compensation Engine
+=============================
 Bridges the gap between deepseek-v4-pro and Claude Opus 4.8 by externalizing
 capabilities that deepseek lacks natively:
   - Strict Chain-of-Thought injection (compensates for no Extended Thinking)
@@ -31,7 +31,7 @@ import re
 import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
-from paths import GODCREATING_ROOT, WATCHDOG_DIR, safe_print
+from paths import GODCREATING_ROOT, WATCHDOG_DIR, PYTHON_EXE, safe_print
 
 # ── Configuration ──────────────────────────────────────────────
 COMPLEXITY_KW_HIGH = {
@@ -62,7 +62,7 @@ COMPLEXITY_KW_MEDIUM = {
     "refine", "enhance", "improve",
 }
 
-# v5.33 strict CoT -- XML-tag enforced, deepseek can't skip it
+# strict CoT -- XML-tag enforced, deepseek can't skip it
 STRICT_COT_TEMPLATE = """BEFORE ANY TOOL USE, you MUST output your reasoning in this EXACT format:
 
 <thinking>
@@ -107,17 +107,17 @@ def classify_complexity(task: str) -> dict:
     elif score == 4:
         recommendation = "design_implement_review"
         pipeline = "Design -> Implement -> Review (3 agents sequential)"
-        escalate = True  # v5.33: auto-escalate at complexity 4+
+        escalate = True  # auto-escalate at complexity 4+
     else:
         recommendation = "full_panel"
         pipeline = "Design -> 3 independent implements -> Judge panel -> Review (6 agents)"
-        escalate = True  # v5.33: auto-escalate at complexity 5
+        escalate = True  # auto-escalate at complexity 5
 
     return {
         "complexity": score,
         "recommendation": recommendation,
         "pipeline": pipeline,
-        "escalate": escalate,  # v5.33 new field
+        "escalate": escalate,
         "escalate_reason": "Use Claude Code Workflow for multi-agent orchestration" if escalate else None,
         "metrics": {
             "high_keyword_hits": high_hits,
@@ -141,7 +141,7 @@ Only after completing ALL 5 steps above, proceed to act.
 
 
 def emit_strict_cot(task: str) -> str:
-    """v5.33: Generate strict CoT with XML-tag enforcement."""
+    """Generate strict CoT with XML-tag enforcement."""
     return STRICT_COT_TEMPLATE.format(task=task)
 
 
@@ -186,7 +186,7 @@ Phase 4 (Review): Agent(type="general-purpose", prompt="Final adversarial review
 
     if analysis.get("escalate"):
         base += """
-### ⚠ AUTO-ESCALATE (v5.33):
+### ⚠ AUTO-ESCALATE:
 This task complexity ({score}/5) exceeds single-agent threshold.
 RECOMMENDATION: Use Claude Code Workflow tool for multi-agent orchestration.
 The Workflow tool supports parallel agents, judge panels, and adversarial verification.
@@ -202,7 +202,7 @@ The Workflow tool supports parallel agents, judge panels, and adversarial verifi
 
 
 def emit_escalate(task: str) -> dict:
-    """v5.33: Emit auto-escalation directive for Workflow."""
+    """Emit auto-escalation directive for Workflow."""
     analysis = classify_complexity(task)
     return {
         "task": task,
@@ -250,7 +250,7 @@ def verify_pre_completion() -> dict:
 
     enforce = Path(WATCHDOG_DIR) / "enforce.py"
     if enforce.exists():
-        rc, _, _ = run_cmd(f'python -m py_compile "{enforce}"', 10)
+        rc, _, _ = run_cmd(f'"{PYTHON_EXE}" -m py_compile "{enforce}"', 10)
         if rc != 0:
             results["warnings"].append("enforce.py compile FAILED")
             results["status"] = "fail"
@@ -259,7 +259,7 @@ def verify_pre_completion() -> dict:
 
     audit = Path(WATCHDOG_DIR) / "self_audit.py"
     if audit.exists():
-        rc, out, _ = run_cmd(f'python "{audit}"', 10)
+        rc, out, _ = run_cmd(f'"{PYTHON_EXE}" "{audit}" "{GODCREATING_ROOT}"', 10)
         if rc != 0:
             results["warnings"].append(f"self_audit FAILED: {out[:200]}")
             results["status"] = "fail"
@@ -270,7 +270,7 @@ def verify_pre_completion() -> dict:
 
 
 def verify_pipeline(scan_dir: str = None) -> dict:
-    """v5.33: Check if recent changes have passed adversarial review pipeline.
+    """Check if recent changes have passed adversarial review pipeline.
 
     Scans for:
     1. Files modified in last session that lack a corresponding VERIFY_ report
@@ -328,7 +328,7 @@ def verify_pipeline(scan_dir: str = None) -> dict:
                 results["actions_needed"].append("Run adversarial review agent before completing")
             else:
                 results["checks"].append(f"Adversarial reviews: {len(reviews)} for {len(changes)} changes")
-        except:
+        except Exception:
             pass
 
     # Check 3: SCOPE_active.md existence for complex changes
@@ -393,7 +393,7 @@ def compensation_active(project_dir: str = ".") -> dict:
     """Check if DeepSeek compensation layer should be active.
     Returns {active: bool, calibration: str, model: str, reason: str}.
     Frontier models -> inactive. DeepSeek/unknown -> active.
-    v5.35 -- uses canonical get_calibration() (calibration.json cache).
+    uses canonical get_calibration() (calibration.json cache).
     """
     try:
         from model_detect import get_calibration
@@ -421,7 +421,7 @@ def main():
     cmd = sys.argv[1]
 
     if cmd == "check":
-        # v5.34: query whether compensation layer is active
+        # query whether compensation layer is active
         project_dir = sys.argv[2] if len(sys.argv) > 2 else os.getcwd()
         result = compensation_active(project_dir)
         print(json.dumps(result, ensure_ascii=False, indent=2))

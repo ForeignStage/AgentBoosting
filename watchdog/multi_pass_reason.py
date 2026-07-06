@@ -3,11 +3,12 @@
 Simulates Opus extended thinking via 3 sequential agent calls.
 Auto mode: 3 CLI invocations. Interactive mode: single enriched prompt.
 
-Usage: python multi_pass_reason.py "[task]" --agent codex|claude_code [--mode auto|interactive] [root]
+Usage: python multi_pass_reason.py "[task]" --agent codex|claude_code [--mode daemon|dispatch] [root]
 Writes: docs/MULTI_PASS_SOLUTION.md
 """
 import sys, os, subprocess
 from datetime import datetime
+from paths import PYTHONW_EXE
 
 _wd = os.path.dirname(os.path.abspath(__file__))
 _sk = os.path.join(_wd, '..', 'skills', 'SKILL_DEEPSEEK_DISCIPLINE.md')
@@ -59,7 +60,7 @@ def main():
         if a == '--agent' and i+1 < len(args):  agent = args[i+1]
         if a == '--mode'  and i+1 < len(args):  mode  = args[i+1]
         elif os.path.isdir(a):                  root  = a
-        elif not a.startswith('--') and a not in ('codex','claude_code','auto','interactive'):
+        elif not a.startswith('--') and a not in ('codex','claude_code','daemon','dispatch'):
             task = a
 
     if not task: print('[MPR] Usage: multi_pass_reason.py "[task]" [opts]'); sys.exit(1)
@@ -69,13 +70,13 @@ def main():
             r = subprocess.run(
                 [PYTHONW_EXE, os.path.join(_wd,'enforce.py'),'mode','--check'],
                 creationflags=0x08000000, capture_output=True, text=True, cwd=root, timeout=10)
-            mode = 'auto' if 'auto' in r.stdout.lower() else 'interactive'
-        except: mode = 'interactive'
+            mode = 'daemon' if 'daemon' in r.stdout.lower() else 'dispatch'
+        except Exception: mode = 'dispatch'
 
     docs = os.path.join(root, 'docs'); os.makedirs(docs, exist_ok=True)
     out_file = os.path.join(docs, 'MULTI_PASS_SOLUTION.md')
 
-    if mode == 'auto':
+    if mode == 'daemon':
         print(f'[MPR] auto --3-pass for: {task[:60]}')
         final, err = auto_three_pass(task, agent, root)
         if err: print(f'[MPR] FAILED: {err}'); sys.exit(1)

@@ -100,19 +100,14 @@ def main():
                 except Exception:
                     pass
 
-        # 4b. Fuse graduated
+        # 4b. Fuse graduated (half-blow: advisory only)
         code, out, err = run(f'"{PYTHON}" "{enf}" fuse --graduated')
         if code == 0 and out:
             try:
                 r = json.loads(out)
                 pct = r.get("pct", 0)
                 if pct >= 95:
-                    emergency = os.path.join(proj, "docs", "EMERGENCY_STOP")
-                    os.makedirs(os.path.dirname(emergency), exist_ok=True)
-                    if not os.path.exists(emergency):
-                        with open(emergency, 'w', encoding='utf-8') as f:
-                            f.write(f"FUSE BLOWN ({pct}%) at {datetime.now().isoformat()}\n")
-                        log(f"FUSE CRITICAL {pct}%: EMERGENCY_STOP -> {proj}")
+                    log(f"FUSE ADVISORY {pct}%: budget nearly exhausted -- consider wrapping up.")
             except Exception:
                 pass
 

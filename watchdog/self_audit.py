@@ -3,8 +3,8 @@
 Usage: python self_audit.py [--mode EXPLORE|EXECUTE|CLARIFY]
        [--no-scope] [--no-backup] [--non-python] [project_root]
 Exit 0 = pass. Exit 1 = STOP.
-v5.34 -- model-aware: frontier models (opus/gpt/sonnet/gemini) auto-pass.
-v5.35 -- uses canonical get_calibration() from model_detect (calibration.json cache).
+Model-aware: frontier models (opus/gpt/sonnet/gemini) auto-pass.
+Uses canonical get_calibration() from model_detect (calibration.json cache).
 Only deepseek or unknown models face the self-audit gate.
 """
 import sys, os
@@ -44,7 +44,7 @@ def main():
     if has_scope and not os.path.exists(os.path.join(root,'docs','SCOPE_active.md')):
         has_scope = False
 
-    # v5.34: Frontier model bypass -- self-audit only needed for DeepSeek
+    # Frontier model bypass -- self-audit only needed for DeepSeek
     if _is_frontier(root):
         print(f'[AUDIT] Frontier model detected -- self-audit bypassed. mode={mode}')
         sys.exit(0)

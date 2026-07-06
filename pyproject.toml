@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "modelboosting"
+version = "1.0.0"
+description = "Externalized mechanical quality-assurance layer for AI agents — compensates DeepSeek capability gaps via deterministic watchdog enforcement"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "ForeignStage" }]
+keywords = [
+    "deepseek",
+    "ai-agent",
+    "watchdog",
+    "code-quality",
+    "claude-code",
+    "codex",
+    "hallucination-detection",
+    "chain-of-thought",
+    "gate",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Homepage = "https://github.com/ForeignStage/ModelBoosting"
+Repository = "https://github.com/ForeignStage/ModelBoosting"
+Issues = "https://github.com/ForeignStage/ModelBoosting/issues"
+
+[project.scripts]
+modelboost-gate = "modelboosting.cli:gate"
+modelboost-detect = "modelboosting.cli:detect"
+modelboost-check = "modelboosting.cli:check"
+modelboost-classify = "modelboosting.cli:classify"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "flake8>=5.0"]

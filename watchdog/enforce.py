@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""InquireLens Watchdog -- Mechanical Enforcement Layer v1.0
+"""InquireLens Watchdog -- Mechanical Enforcement Layer
 Not a suggestion. Not a guideline. A gate. Returns non-zero = agent MUST stop.
 """
 import json, os, sys, hashlib, time, re
@@ -23,7 +23,7 @@ if os.path.exists(CONFIG_PATH):
             _cfg = json.load(_f)
         AGENTS_PATH = _cfg.get('paths', {}).get('agents_md', AGENTS_PATH)
         BACKUP_DIR = _cfg.get('paths', {}).get('backup_dir', BACKUP_DIR)
-    except: pass
+    except Exception: pass
 
 os.makedirs(LOCK_DIR, exist_ok=True)
 os.makedirs(BACKUP_DIR, exist_ok=True)
@@ -49,7 +49,7 @@ def _read_json(path):
     if not os.path.exists(path): return []
     try:
         with open(path, 'r', encoding='utf-8') as f: return json.load(f)
-    except: return []
+    except Exception: return []
 
 def _write_json(path, data):
     with open(path, 'w', encoding='utf-8') as f: json.dump(data, f, indent=2, ensure_ascii=False)
@@ -62,26 +62,26 @@ def log_action(action, details=None):
     _write_json(ACTION_LOG, log)
 
 
-# === MODE AWARENESS (PATCH v1.1) ===
+# === MODE AWARENESS ===
 MODE_FILE = os.path.join(WD, 'mode')
 
 def check_mode():
-    """Returns current mode: interactive (default) or overnight."""
+    """Returns current mode: dispatch (default) or daemon."""
     if not os.path.exists(MODE_FILE):
-        return 'interactive'
+        return 'dispatch'
     try:
         with open(MODE_FILE, 'r', encoding='utf-8') as f:
             mode = f.read().strip()
-        if mode in ('interactive', 'auto'):
+        if mode in ('dispatch', 'daemon'):
             return mode
-    except:
+    except Exception:
         pass
-    return 'interactive'
+    return 'dispatch'
 
 def set_mode(mode):
-    """Set mode: interactive or auto. Persists to last_mode.json for reboot survival."""
-    if mode not in ('interactive', 'auto'):
-        return {'status': 'error', 'message': 'Mode must be interactive or auto'}
+    """Set mode: dispatch or daemon. Persists to last_mode.json for reboot survival."""
+    if mode not in ('dispatch', 'daemon'):
+        return {'status': 'error', 'message': 'Mode must be dispatch or daemon'}
     with open(MODE_FILE, 'w', encoding='utf-8') as f:
         f.write(mode)
     # Persist to global last_mode.json for reboot survival
@@ -91,7 +91,7 @@ def set_mode(mode):
         lm_path = os.path.join(cfg_dir, 'last_mode.json')
         with open(lm_path, 'w', encoding='utf-8') as f:
             json.dump({'mode': mode, 'timestamp': datetime.now().isoformat()}, f)
-    except:
+    except Exception:
         pass
     return {'status': 'ok', 'message': f'Mode set to {mode} (persisted to last_mode.json)'}
 
@@ -110,13 +110,13 @@ def check_boot():
         return {'status': 'corrupt', 'message': f'Boot token corrupt: {e}'}
 
 def mark_boot_complete():
-    data = {'boot_time': _now().isoformat(), 'version': 'v5.20', 'ttl_minutes': BOOT_TTL_MINUTES}
+    data = {'boot_time': _now().isoformat(), 'ttl_minutes': BOOT_TTL_MINUTES}
     with open(BOOT_TOKEN, 'w', encoding='utf-8') as f: json.dump(data, f)
     return {'status': 'ok', 'message': f'Boot complete. Token valid for {BOOT_TTL_MINUTES} minutes.'}
 
 def renew_boot():
     """Refresh boot timestamp only -- does NOT reset fuse or integrity hash."""
-    data = {'boot_time': _now().isoformat(), 'version': 'v5.20', 'ttl_minutes': BOOT_TTL_MINUTES}
+    data = {'boot_time': _now().isoformat(), 'ttl_minutes': BOOT_TTL_MINUTES}
     with open(BOOT_TOKEN, 'w', encoding='utf-8') as f: json.dump(data, f)
     return {'status': 'ok', 'message': f'Boot renewed. Token valid for {BOOT_TTL_MINUTES} minutes. Fuse unchanged.'}
 
@@ -125,34 +125,34 @@ def _fuse_data():
         return {"spent": 0.0, "limit": 200.0}  # 200 RMB default -- relaxed from 10
     try:
         with open(FUSE_RMB_FILE, 'r', encoding='utf-8') as f: return json.load(f)
-    except: return {"spent": 0.0, "limit": 200.0}
+    except Exception: return {"spent": 0.0, "limit": 200.0}
 
 def check_fuse():
-    """v5.31: Graduated fuse with 60/80/95/100 thresholds.
-    In interactive mode, fuse is informational only -- never blocks."""
+    """Half-Blow: advisory warnings only. Never hard-stops. User decides.
+    60/80/95/100 thresholds emit escalating warnings but never block execution."""
     mode = check_mode()
     d = _fuse_data()
     spent, limit = d.get("spent", 0.0), d.get("limit", 10.0)
     remaining = max(0.0, limit - spent)
     pct = (spent / limit * 100) if limit > 0 else 0
 
-    if mode == 'interactive':
+    if mode == 'dispatch':
         return {'status': 'ok', 'spent_rmb': spent, 'limit_rmb': limit, 'remaining_rmb': remaining,
-                'pct': pct, 'restriction': 'none', 'mode': 'interactive',
-                'message': f'Interactive mode -- fuse monitoring only ({pct:.1f}%)'}
+                'pct': pct, 'restriction': 'none', 'mode': 'dispatch',
+                'message': f'Dispatch mode -- fuse monitoring only ({pct:.1f}%)'}
 
     if spent >= limit:
-        return {'status': 'blown', 'spent_rmb': spent, 'limit_rmb': limit, 'remaining_rmb': 0.0,
-                'pct': pct, 'restriction': 'STOP ALL',
-                'message': f'FUSE BLOWN ({pct:.1f}%). STOP ALL TASKS.'}
+        return {'status': 'half_blown', 'spent_rmb': spent, 'limit_rmb': limit, 'remaining_rmb': 0.0,
+                'pct': pct, 'restriction': 'advisory',
+                'message': f'HALF-BLOWN: limit reached ({pct:.1f}%). Advisory only — user decides whether to continue.'}
     if pct >= 95:
-        return {'status': 'critical', 'spent_rmb': spent, 'limit_rmb': limit, 'remaining_rmb': remaining,
-                'pct': pct, 'restriction': 'STOP + MORNING_REPORT',
-                'message': f'CRITICAL: 95% used ({pct:.1f}%). STOP. Generate MORNING_REPORT.'}
+        return {'status': 'critical_advisory', 'spent_rmb': spent, 'limit_rmb': limit, 'remaining_rmb': remaining,
+                'pct': pct, 'restriction': 'advisory',
+                'message': f'ADVISORY: 95% used ({pct:.1f}%). Consider wrapping up, generating HANDOFF.'}
     if pct >= 80:
-        return {'status': 'warning', 'spent_rmb': spent, 'limit_rmb': limit, 'remaining_rmb': remaining,
-                'pct': pct, 'restriction': 'P0+P1 only',
-                'message': f'WARNING: 80% used ({pct:.1f}%). P0/P1 only. Skip P2/P3.'}
+        return {'status': 'warning_advisory', 'spent_rmb': spent, 'limit_rmb': limit, 'remaining_rmb': remaining,
+                'pct': pct, 'restriction': 'advisory',
+                'message': f'ADVISORY: 80% used ({pct:.1f}%). Budget running low — user should review.'}
     return {'status': 'ok', 'spent_rmb': spent, 'limit_rmb': limit, 'remaining_rmb': remaining,
             'pct': pct, 'restriction': 'none'}
 
@@ -177,7 +177,7 @@ def reset_fuse():
     with open(FUSE_RMB_FILE, 'w', encoding='utf-8') as f: json.dump(d, f)
     return {'status': 'ok', 'message': 'Fuse reset. Spent = 0 RMB.'}
 
-# === CONSTITUTION v5.31 FUSE EXPANSION (5.7-5.14) ===
+# === CONSTITUTION FUSE EXPANSION (5.7-5.14) ===
 
 AGENT_PROJECTS_ROOT = r'E:\AgentHub\AgentProjects'
 
@@ -191,7 +191,7 @@ def count_active_projects():
             proj_path = os.path.join(AGENT_PROJECTS_ROOT, entry)
             if os.path.isdir(proj_path) and os.path.exists(os.path.join(proj_path, 'watchdog', 'enforce.py')):
                 count += 1
-    except:
+    except Exception:
         count = 1
     return max(1, count)
 
@@ -213,24 +213,24 @@ def fuse_apply_dynamic():
     return result
 
 def check_fuse_graduated():
-    """5.11: Graduated warning with 60/80/95 thresholds.
-    Interactive mode: monitoring only, never blocks."""
+    """5.11: Half-blow graduated advisory. 60/80/95 thresholds — advisory only, never blocks.
+    Dispatch mode: monitoring only."""
     mode = check_mode()
     d = _fuse_data()
     spent, limit = d.get('spent', 0.0), d.get('limit', 10.0)
     pct = (spent / limit * 100) if limit > 0 else 100
-    if mode == 'interactive':
+    if mode == 'dispatch':
         return {'status': 'ok', 'spent_rmb': spent, 'limit_rmb': limit, 'pct': pct,
-                'restriction': 'none', 'mode': 'interactive', 'message': f'Monitoring ({pct:.1f}%)'}
+                'restriction': 'none', 'mode': 'dispatch', 'message': f'Monitoring ({pct:.1f}%)'}
     if spent >= limit:
-        return {'status': 'blown', 'spent_rmb': spent, 'limit_rmb': limit, 'pct': pct,
-                'restriction': 'STOP ALL', 'message': f'FUSE BLOWN ({pct:.1f}%). STOP ALL TASKS.'}
+        return {'status': 'half_blown', 'spent_rmb': spent, 'limit_rmb': limit, 'pct': pct,
+                'restriction': 'advisory', 'message': f'HALF-BLOWN: limit reached ({pct:.1f}%). Advisory — user decides.'}
     if pct >= 95:
-        return {'status': 'critical', 'spent_rmb': spent, 'limit_rmb': limit, 'pct': pct,
-                'restriction': 'STOP + MORNING_REPORT', 'message': f'95% reached ({pct:.1f}%). STOP. Generate MORNING_REPORT.'}
+        return {'status': 'critical_advisory', 'spent_rmb': spent, 'limit_rmb': limit, 'pct': pct,
+                'restriction': 'advisory', 'message': f'ADVISORY: 95% ({pct:.1f}%). Consider wrapping up.'}
     if pct >= 80:
-        return {'status': 'warning', 'spent_rmb': spent, 'limit_rmb': limit, 'pct': pct,
-                'restriction': 'P0+P1 only', 'message': f'80% reached ({pct:.1f}%). Prioritize P0+P1 only. Skip P2/P3.'}
+        return {'status': 'warning_advisory', 'spent_rmb': spent, 'limit_rmb': limit, 'pct': pct,
+                'restriction': 'advisory', 'message': f'ADVISORY: 80% ({pct:.1f}%). Budget running low.'}
     return {'status': 'ok', 'spent_rmb': spent, 'limit_rmb': limit, 'pct': pct,
             'restriction': 'none', 'message': f'{pct:.1f}% used. No restriction.'}
 
@@ -317,7 +317,7 @@ def fuse_idle_check():
                 result['status'] = 'stop'
             elif result['idle_loops'] >= 15:
                 result['actions'].append('SLOW: 15+ idle loops, increase wait to 5 min')
-        except:
+        except Exception:
             pass
     
     # Overnight duration
@@ -335,7 +335,7 @@ def fuse_idle_check():
                 result['actions'].append('CHECKPOINT: 2h reached, generate INTERIM_HANDOFF')
                 if result['status'] == 'ok':
                     result['status'] = 'checkpoint'
-        except:
+        except Exception:
             pass
     
     return result
@@ -348,7 +348,7 @@ def fuse_idle_incr():
             with open(IDLE_COUNT_FILE, 'r', encoding='utf-8') as f:
                 idle = json.load(f)
             idle['count'] = idle.get('count', 0) + 1
-        except:
+        except Exception:
             pass
     idle['last_update'] = _now().isoformat()
     with open(IDLE_COUNT_FILE, 'w', encoding='utf-8') as f:
@@ -502,7 +502,7 @@ def heartbeat_touch():
 
 
 
-# === SPIRAL DETECTION (PATCH v1.2) ===
+# === SPIRAL DETECTION ===
 SPIRAL_LOG = os.path.join(WD, 'spiral_log.json')
 SPIRAL_INTERACTIVE_WARN = 50    # same file >50 edits in 5 min -> warn (relaxed from 10)
 SPIRAL_INTERACTIVE_BLOCK = 100  # same file >100 edits in 5 min -> block (relaxed from 15)
@@ -538,7 +538,7 @@ def check_spiral(filepath):
     # Get recent edits for this file
     recent = [e for e in log if e.get('file') == filepath]
     
-    if mode == 'interactive':
+    if mode == 'dispatch':
         # Count edits in last 5 minutes
         cutoff = now - timedelta(minutes=5)
         recent_5m = [e for e in recent if _now_from_iso(e['time']) > cutoff]
@@ -583,17 +583,17 @@ def check_spiral(filepath):
                 'mode': mode
             }
     
-    return {'status': 'ok', 'count': len(recent_5m) if mode == 'interactive' else count, 'mode': mode}
+    return {'status': 'ok', 'count': len(recent_5m) if mode == 'dispatch' else count, 'mode': mode}
 
 def _now_from_iso(ts):
     """Parse ISO timestamp robustly."""
     try:
         return datetime.fromisoformat(ts)
-    except:
+    except Exception:
         return _now() - timedelta(hours=1)  # Treat unparseable as old
 
 
-# === AUTO-BACKUP HOOK (PATCH v1.3) ===
+# === AUTO-BACKUP HOOK ===
 def auto_backup(filepath):
     """Create .bak before modification. Returns backup path or error."""
     if not os.path.exists(filepath):
@@ -609,7 +609,7 @@ def auto_backup(filepath):
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             line_count = sum(1 for _ in f)
-    except:
+    except Exception:
         line_count = 0
     
     if line_count <= 50:
@@ -625,7 +625,7 @@ def auto_backup(filepath):
         return {'status': 'error', 'message': str(e)}
 
 
-# === SCOPE / VERIFY / LOCKS (PATCH v1.5) ===
+# === SCOPE / VERIFY / LOCKS ===
 SCOPE_FILE = os.path.join(WD, '..', 'docs', 'SCOPE_active.md')
 SCOPE_MAX_AGE_MIN = 1440   # 24h -- relaxed from 30m (API compat)
 VERIFY_MAX_AGE_MIN = 60     # 1h -- relaxed from 5m
@@ -641,7 +641,7 @@ def check_scope():
             content = f.read()
         if 'Done when:' not in content:
             return {'status': 'incomplete', 'message': 'SCOPE_active.md missing "Done when:" field.'}
-    except: pass
+    except Exception: pass
     return {'status': 'ok', 'message': f'Scope valid ({age_min:.0f}min ago).', 'age_min': age_min}
 
 def check_verify_recent():
@@ -666,7 +666,7 @@ def check_verify_recent():
         age = (now - best[1]).total_seconds() / 60
         return {'status': 'ok' if passed else 'fail',
                 'message': f'Verify {"PASS" if passed else "FAIL"} ({age:.1f}min ago)', 'path': best[0]}
-    except:
+    except Exception:
         return {'status': 'error', 'message': 'Could not read VERIFY report'}
 
 def expire_stale_locks():
@@ -690,7 +690,7 @@ def expire_stale_locks():
                 mtime = datetime.fromtimestamp(os.path.getmtime(fpath))
                 if (now - mtime).total_seconds() > 20 * 60:
                     os.remove(fpath); expired.append(fname)
-        except: pass
+        except Exception: pass
     return {'expired': len(expired), 'files': expired}
 
 def propose_improvement(description, category='general'):
@@ -705,7 +705,7 @@ def propose_improvement(description, category='general'):
         f.write(entry)
     return {'status': 'ok', 'message': f'Proposal logged: {description[:60]}'}
 
-# === FAILURE LOG (PATCH v1.6) ===
+# === FAILURE LOG ===
 FAILURE_LOG = os.path.join(WD, '..', 'docs', 'FAILURE_LOG.md')
 
 def log_failure(description, task=None):
@@ -721,7 +721,7 @@ def log_failure(description, task=None):
             trimmed = parts[0] + '\n## ' + '\n## '.join(parts[-20:])
             with open(FAILURE_LOG, 'w', encoding='utf-8') as f:
                 f.write(trimmed)
-    except: pass
+    except Exception: pass
     return {'status': 'ok', 'logged': description}
 
 def read_failures(n=5):
@@ -732,15 +732,15 @@ def read_failures(n=5):
             content = f.read()
         entries = [e.strip() for e in content.split('\n## ') if e.strip() and not e.strip().startswith('#')]
         return {'status': 'ok', 'failures': entries[-n:], 'count': len(entries)}
-    except:
+    except Exception:
         return {'status': 'error', 'failures': []}
 
-# === ROUTE AUDIT (PATCH v1.4) ===
+# === ROUTE AUDIT ===
 def audit_routes():
-    """In auto mode: verify a route check was done in the last 15 min."""
+    """In daemon mode: verify a route check was done in the last 15 min."""
     mode = check_mode()
-    if mode != 'auto':
-        return {"status": "ok", "message": "Interactive mode -- route audit skipped.", "recent_checks": 0}
+    if mode != 'daemon':
+        return {"status": "ok", "message": "Dispatch mode -- route audit skipped.", "recent_checks": 0}
     log = _read_json(ACTION_LOG)
     if isinstance(log, dict): log = []
     cutoff = _now() - timedelta(minutes=15)
@@ -767,7 +767,7 @@ def check_all(spiral_file=None):
         warnings.append('BOOT: ' + boot['message'])
     if fuse['status'] == 'blown':
         warnings.append('FUSE: ' + fuse['message'])
-    # v5.32: integrity mismatch is a WARNING, not a blocker.
+    # integrity mismatch is a WARNING, not a blocker.
     if integrity['status'] not in ('ok', 'uninitialized'):
         print(f"[check-all] INTEGRITY WARNING (non-blocking): {integrity['message']}")
     if heartbeat['status'] == 'stale':
@@ -785,7 +785,7 @@ def check_all(spiral_file=None):
     if route_audit['status'] == 'warn':
         warnings.append('ROUTE: ' + route_audit['message'])
 
-    # REANCHOR enforcement (constitution 13.4) -- advisory only in v5.32
+    # REANCHOR enforcement (constitution 13.4) -- advisory only
     reanchor_count = 0
     log = _read_json(ACTION_LOG)
     if isinstance(log, list):
@@ -797,10 +797,10 @@ def check_all(spiral_file=None):
         warnings.append(f'REANCHOR: {reanchor_count} actions without re-anchor.')
     reanchor_status = {'count_since_anchor': reanchor_count, 'status': 'ok' if reanchor_count < 10 else 'warn'}
 
-    # v5.32: always 'go' in interactive mode. Warnings are logged but never block.
-    overall = 'go' if mode == 'interactive' else ('go' if not warnings else 'no_go')
-    if warnings and mode == 'interactive':
-        print(f"[check-all] Advisory warnings (interactive mode -- non-blocking): {', '.join(warnings[:3])}")
+    # always 'go' in dispatch mode. Warnings are logged but never block.
+    overall = 'go' if mode == 'dispatch' else ('go' if not warnings else 'no_go')
+    if warnings and mode == 'dispatch':
+        print(f"[check-all] Advisory warnings (dispatch mode -- non-blocking): {', '.join(warnings[:3])}")
     result = {
         'timestamp': _now().isoformat(),
         'boot': boot,

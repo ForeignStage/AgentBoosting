@@ -3,7 +3,7 @@
 Usage: python model_detect.py [search_dir] [--persist watchdog_dir]
 Outputs calibration level for deepseek discipline enforcement.
 
-v5.35 -- --persist writes calibration.json for all watchdog scripts to consume.
+--persist writes calibration.json for all watchdog scripts to consume.
 """
 import sys, os, json
 
@@ -100,7 +100,6 @@ def persist_calibration(result, watch_dir):
         "deepseek_active": result[3] in ("elevated", "max_caution"),
         "frontier_active": result[3] == "standard",
         "detected_at": __import__("datetime").datetime.now().isoformat(),
-        "version": "v5.35"
     }
     os.makedirs(watch_dir, exist_ok=True)
     path = os.path.join(watch_dir, CALIBRATION_FILE)
